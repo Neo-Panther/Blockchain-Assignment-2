@@ -81,7 +81,7 @@ contract XYZCompany {
         pendingPurchases.pop();
     }
 
-    function deletePendingPurchase(uint256 index) public {
+    function rejectPurchase(uint256 index) public {
         require(msg.sender == owner, "Only the owner can delete a Purchase");
         require(index < pendingPurchases.length, "Index out of bounds");
         pendingPurchases[index] = pendingPurchases[pendingPurchases.length-1];
