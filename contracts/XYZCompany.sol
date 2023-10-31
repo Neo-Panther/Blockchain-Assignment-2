@@ -14,14 +14,14 @@ contract XYZCompany {
         token = new XYZToken(INITIAL_SUPPLY);
     }
 
-    function validatePurchase() private pure returns(bool){
+    function validatePurchase(uint256 total) private pure returns(bool){
         // The company checks the validity of transaction
-        return true;
+        return total > 0;
     }
 
     function completePurchase(uint256 totalBeforeDiscount, bool availDiscount) public returns(uint256 discount){
         require(totalBeforeDiscount > 0, "Total should be greater than 0");
-        require(validatePurchase(), "Invalid Purchase");
+        require(validatePurchase(totalBeforeDiscount), "Invalid Purchase");
         address customerAddress = msg.sender;
         uint256 prevTokens = token.balanceOf(msg.sender);
         uint256 newTokens = totalBeforeDiscount / 500;
