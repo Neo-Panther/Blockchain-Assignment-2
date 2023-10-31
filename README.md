@@ -5,7 +5,7 @@ The `.deps` folder contains dependencies for this project, while the artifacts f
 This Project contains two contracts in two solidity files inside `contracts` folder:
 
 ## Deploying the Contracts
-To deploy and interact with the project, deploy the XYZCompany contract with any address. Now this contract can be accessed with any address to call one of its functions (mentioned ahead).
+To deploy and interact with the project, deploy the XYZCompany contract with the owner's (company's) address. Now this contract can be accessed with any address to call one of its functions (mentioned ahead).
 
 ## CustomERC20.sol (XYZToken)
 
