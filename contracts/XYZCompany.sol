@@ -8,22 +8,51 @@ import "./CustomERC20.sol";
 
 contract XYZCompany {
     XYZToken immutable private token;
-    uint256 constant INITIAL_SUPPLY = 1000;
+    address immutable private owner;
+    uint256 constant private INITIAL_SUPPLY = 10000;
+    mapping(address => string) private registeredCustomers;
     event Logger(uint256 prevTokens, uint256 addedTokens, uint256 spentTokens);
+    event TransactionConfirmed(address customerAddress, uint256 discount);
+    event TransactionRejected(address customerAddress);
+    struct Purchase{
+        address customerAddress;
+        uint256 totalBeforeDiscount;
+        bool availDiscount;
+    }
+    Purchase[] private pendingPurchases;
+    function getPendingPurchase(uint256 index) public view returns(Purchase memory){
+        require(index < pendingPurchases.length, "Index out of bounds");
+        return pendingPurchases[index];
+    }
     constructor() {
         token = new XYZToken(INITIAL_SUPPLY);
+        owner = msg.sender;
+        registeredCustomers[owner] = "owner";
     }
 
-    function validatePurchase(uint256 total) private pure returns(bool){
-        // The company checks the validity of transaction
-        return total > 0;
-    }
-
-    function completePurchase(uint256 totalBeforeDiscount, bool availDiscount) public returns(uint256 discount){
+    function startPurchase(uint256 totalBeforeDiscount, bool availDiscount) external {
         require(totalBeforeDiscount > 0, "Total should be greater than 0");
-        require(validatePurchase(totalBeforeDiscount), "Invalid Purchase");
-        address customerAddress = msg.sender;
-        uint256 prevTokens = token.balanceOf(msg.sender);
+        bytes memory customerName = bytes(registeredCustomers[msg.sender]);
+        require(customerName.length != 0, "Unregistered Customer");
+        require(totalBeforeDiscount > 0, "Purchase must have a total greater than 0");
+        // add the purchase only after basic validity checks
+        pendingPurchases.push(Purchase(msg.sender, totalBeforeDiscount, availDiscount));
+    }
+
+    function registerNewCustomer(address customerAddress, string memory name) external {
+        require(msg.sender == owner, "Only the owner can register new customers");
+        bytes memory customerName = bytes(name);
+        require(customerName.length > 0, "Name must be non-empty");
+        registeredCustomers[customerAddress] = name;
+    }
+
+    function confirmPurchase(uint256 index) public returns(uint256 discount){
+        require(msg.sender == owner, "Only the owner can confirm a purchase");
+        require(index < pendingPurchases.length, "Index out of bounds");
+        uint256 totalBeforeDiscount = pendingPurchases[index].totalBeforeDiscount;
+        bool availDiscount = pendingPurchases[index].availDiscount;
+        address customerAddress = pendingPurchases[index].customerAddress;
+        uint256 prevTokens = token.balanceOf(customerAddress);
         uint256 newTokens = totalBeforeDiscount / 500;
         uint256 spentTokens = 0;
         if (!availDiscount || prevTokens < 5){
@@ -47,6 +76,17 @@ contract XYZCompany {
         emit Logger(prevTokens, newTokens, spentTokens);
         token.useTokens(customerAddress, spentTokens);
         token.issueTokens(customerAddress, newTokens);
+        emit TransactionConfirmed(customerAddress, discount);
+        pendingPurchases[index] = pendingPurchases[pendingPurchases.length-1];
+        pendingPurchases.pop();
+    }
+
+    function deletePendingPurchase(uint256 index) public {
+        require(msg.sender == owner, "Only the owner can delete a Purchase");
+        require(index < pendingPurchases.length, "Index out of bounds");
+        pendingPurchases[index] = pendingPurchases[pendingPurchases.length-1];
+        emit TransactionRejected(pendingPurchases[index].customerAddress);
+        pendingPurchases.pop();
     }
 
     function getRemainingTokens() public view returns(uint256) {

@@ -7,7 +7,6 @@ import "../.deps/npm/@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract XYZToken is ERC20 {
     address immutable public owner;
-    event Log(address msgSender, address tokenOwner, address destinationAddress, uint256 amount);
     event TokensFinished();
     constructor(uint _supply) ERC20 ("XYZ Coin", "XYZ") {
         owner = msg.sender;
@@ -20,7 +19,6 @@ contract XYZToken is ERC20 {
 
     function useTokens(address customerAddress, uint256 amount) external {
         require(msg.sender == owner, "Tokens can be transferred only after company's verificaton.");
-        emit Log(msg.sender, customerAddress, address(this), amount);
         if (amount > 0){
             // this function checks if the customerAddress has enough tokens
             _transfer(customerAddress, address(this), amount);
@@ -29,7 +27,6 @@ contract XYZToken is ERC20 {
 
     function issueTokens(address customerAddress, uint256 amount) external {
         require(msg.sender == owner, "Only the company can issue tokens");
-        emit Log(msg.sender, owner, customerAddress, amount);
         uint256 remainingSupply = getRemainingTokens();
         if (amount > remainingSupply){
             if (remainingSupply > 0){
