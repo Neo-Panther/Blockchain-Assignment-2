@@ -15,7 +15,7 @@ This contract extends the ERC20 implementation in the openzeppelin library for t
 
 ### constructor and state variables
 The ERC20 token is created with the name `XYZ Coin` and the symbol `XYZ`, this given initial amount `_supply` is minted only once in the contract (for a limited supply).
-The deployer of the contract is saved as the `owner` of the contract. This is always the second contract - `XYZCompany`. A `Log` event is created to log all transfers of tokens (involved addresses and amount). A `TokensFinished` event is emitted on every `issueTokens` transaction if the tokens are finished.
+The deployer of the contract is saved as the `owner` of the contract. This is always the second contract - `XYZCompany`. A `TokensFinished` event is emitted on every `issueTokens` transaction if the tokens are finished.
 
 ### getRemainingBalance
 > `function getRemainingTokens() public view returns(uint256)`
@@ -39,17 +39,29 @@ issues tokens to the specified address if enough remain, else emits `TokensFinis
 This contract contains the bussiness logic while also acting as a frontend for accessing the features of the blockchain. This contract is supposed to be deployed directly.
 
 ### constructor and state variables
-`token` represents XYZToken contract, created with the specified `INITIAL_SUPPLY`. `Logger` event is created to log the flow of tokens in every transaction.
+`token` represents XYZToken contract, created with the specified `INITIAL_SUPPLY`. `owner` representes the company (the address which deployed this contract). `registeredCustomers` stores the address and name (nickname or username) of the customers registered for this scheme. The `owner` is considered a registered customer with the name owner.
+`Logger` event is created to log the flow of tokens in every transaction. `TransactionConfirmed` event is emitted on the the confirmation of a purchase by the owner (containing the address of the customer and the discount achieved). `TransactionRejected` event is emitted on the rejection of a purchase by the owner (containing the concerned customer's address).
+`Purchase` struct represents a purchase started by *customerAddress*, with a total of *totalBeforeDiscount* and the customer's wish to use their tokens in *availDiscount*. `pendingPurchases` stores the purchases started by a registered customer, but not yet confirmed/rejected by the company.
 
-### validatePurchase
-> `function validatePurchase(uint256 total) private pure returns(bool)`
+### startPurchase
+> `function startPurchase(uint256 totalBeforeDiscount, bool availDiscount) external`
 
-validates a purchase made by a customer from the company's side
+a registered customer starts a purchase giving their pre-discount total and wish to avail the discount (use their tokens) as input.
 
-### completePurchase
-> `function completePurchase(uint256 totalBeforeDiscount, bool availDiscount) public returns(uint256 discount)`
+### registerNewCustomer
+> `function registerNewCustomer(address customerAddress, string memory name) external`
 
-given the total before discount and if the customer wants to use their tokens (to avail the discount) the function issues new tokens, uses up the required amount of tokens and returns the percentage discount made on this purchase. The function also calls `validatePurchase` to check if the purchase was valid.
+The owner registers a new customer with the address customerAddress and a non-empty name.
+
+### confirmPurchase
+> `function confirmPurchase(uint256 index) public returns(uint256 discount)`
+
+The owner confirms a purchase from the list of `pendingPurchases` giving its index. Using a decision tree logic appropriate discount is returned, new tokens are added and required tokens are used. After execution, the purchase is removed from `pendingPurchases`.
+
+### rejectPurchase
+> `function rejectPurchase(uint256 index) public`
+
+The owner rejects a purchase, it is deleted from `pendingPurchases`.
 
 ### getRemainingTokens
 > `function getRemainingTokens() public view returns(uint256)`
